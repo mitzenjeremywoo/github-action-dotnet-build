@@ -38,7 +38,7 @@ jobs:
       run: ls -al
    
     - name: Publish the package to GPR
-      run: dotnet nuget push *.nupkg
+      run: dotnet nuget push bin/Release/*.nupkg
 
     - name: Upload artifact for ${{ matrix.dotnet-version }}
       uses: actions/upload-artifact@v4

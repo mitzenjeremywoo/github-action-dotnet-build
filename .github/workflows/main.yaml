@@ -30,6 +30,12 @@ jobs:
 
     - name: Publish for ${{ matrix.dotnet-version }}
       run: dotnet publish --configuration Release --framework net${{ matrix.dotnet-version }} -o publish-${{ matrix.dotnet-version }}
+    
+    - name: Create the package
+      run: dotnet pack --configuration Release github-action-dotnet-build
+    
+    - name: Publish the package to GPR
+      run: dotnet nuget push github-action-dotnet-build/bin/Release/*.nupkg
 
     - name: Upload artifact for ${{ matrix.dotnet-version }}
       uses: actions/upload-artifact@v4

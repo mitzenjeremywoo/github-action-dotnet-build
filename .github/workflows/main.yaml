@@ -5,6 +5,12 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_call:
+    inputs:
+      dotnetVersion:
+        description: 'Target dotnet version'
+        required: false
+        default: '8.0'
 
 permissions:
   packages: write
@@ -12,27 +18,24 @@ permissions:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dotnet-version: ['8.0'] # Add all your supported versions
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up .NET ${{ matrix.dotnet-version }}
+    - name: Set up .NET ${{ inputs.dotnetVersion }}
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: ${{ matrix.dotnet-version }}
+        dotnet-version: ${{ inputs.dotnetVersion }}
 
     - name: Restore dependencies
       run: dotnet restore
 
-    - name: Build for ${{ matrix.dotnet-version }}
-      run: dotnet build --configuration Release --framework net${{ matrix.dotnet-version }}
+    - name: Build for ${{ inputs.dotnetVersion }}
+      run: dotnet build --configuration Release --framework net${{ inputs.dotnetVersion }}
 
     - name: Publish for ${{ matrix.dotnet-version }}
-      run: dotnet publish --configuration Release --framework net${{ matrix.dotnet-version }} -o publish-${{ matrix.dotnet-version }}
+      run: dotnet publish --configuration Release --framework net${{ inputs.dotnetVersion }} -o release
     
     - name: Create the package
       run: dotnet pack --configuration Release
@@ -45,3 +48,23 @@ jobs:
       with:
         name: published-artifact-net${{ matrix.dotnet-version }}
         path: publish-${{ matrix.dotnet-version }}
+
+    - name: Show directory
+      run: |
+        pwd
+        ls -al -R
+    
+    # build dockerfile 
+    - name: Log in to GitHub Container Registry (GHCR)
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and Push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ghcr.io/${{ github.repository_owner }}/github-action-dotnet-build:latest

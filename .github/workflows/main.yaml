@@ -1,18 +1,14 @@
 name: .NET
 
 on:
-  workflow_call:
-    inputs:
-      dotnetVersion:
-        description: 'Target dotnet version'
-        type: string
-        required: false
-        default: '8.0'
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  
+
+env:
+ dotnetVersion: '8.0'
+        
 permissions:
   packages: write
 
@@ -24,19 +20,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up .NET ${{ inputs.dotnetVersion }}
+    - name: Set up .NET ${{ env.dotnetVersion }}
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: ${{ inputs.dotnetVersion }}
+        dotnet-version: ${{ env.dotnetVersion }}
 
     - name: Restore dependencies
       run: dotnet restore
 
-    - name: Build for ${{ inputs.dotnetVersion }}
-      run: dotnet build --configuration Release --framework net${{ inputs.dotnetVersion }}
+    - name: Build for ${{ env.dotnetVersion }}
+      run: dotnet build --configuration Release --framework net${{ env.dotnetVersion }}
 
     - name: Publish for ${{ matrix.dotnet-version }}
-      run: dotnet publish --configuration Release --framework net${{ inputs.dotnetVersion }} -o release
+      run: dotnet publish --configuration Release --framework net${{ env.dotnetVersion }} -o release
     
     - name: Create the package
       run: dotnet pack --configuration Release
@@ -47,8 +43,8 @@ jobs:
     - name: Upload artifact for ${{ matrix.dotnet-version }}
       uses: actions/upload-artifact@v4
       with:
-        name: published-artifact-net${{ matrix.dotnet-version }}
-        path: publish-${{ matrix.dotnet-version }}
+        name: published-artifact-net
+        path: release
 
     - name: Show directory
       run: |
